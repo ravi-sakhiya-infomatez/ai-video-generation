@@ -17,7 +17,10 @@ const nextConfig: NextConfig = {
   typescript: {
     ignoreBuildErrors: true,
   },
-
+  serverExternalPackages: [
+    '@remotion/bundler',
+    '@remotion/renderer',
+  ],
 };
 
 export default nextConfig;

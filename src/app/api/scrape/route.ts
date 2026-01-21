@@ -19,14 +19,14 @@ export async function POST(request: Request) {
     });
 
     const page = await browser.newPage();
-    
+
     // Set a reasonable timeout
     await page.setDefaultNavigationTimeout(30000);
-    
+
     // Enable JavaScript
     await page.setJavaScriptEnabled(true);
-    
-    await page.goto(url, { 
+
+    await page.goto(url, {
       waitUntil: 'networkidle0',
       timeout: 30000
     });
@@ -73,7 +73,7 @@ async function scrapeAmazon(page: Page): Promise<Product> {
   // Helper function to safely extract multiple image URLs
   const safeImagesExtract = async (): Promise<string[]> => {
     const images: string[] = [];
-    
+
     try {
       // Try to get the highest quality image from the main product image
       const mainImage = await page.$eval(
@@ -90,14 +90,14 @@ async function scrapeAmazon(page: Page): Promise<Product> {
                   .sort(([, a]: any, [, b]: any) => (b.width * b.height) - (a.width * a.height))[0][0];
               } catch {
                 // Fallback to other high-res sources
-                return el.getAttribute('data-old-hires') || 
-                       el.getAttribute('data-zoom-hires') || 
-                       el.src;
+                return el.getAttribute('data-old-hires') ||
+                  el.getAttribute('data-zoom-hires') ||
+                  el.src;
               }
             }
-            return el.getAttribute('data-old-hires') || 
-                   el.getAttribute('data-zoom-hires') || 
-                   el.src;
+            return el.getAttribute('data-old-hires') ||
+              el.getAttribute('data-zoom-hires') ||
+              el.src;
           }
           return '';
         }
@@ -113,9 +113,9 @@ async function scrapeAmazon(page: Page): Promise<Product> {
         (elements: Element[]) => {
           return elements.map((el) => {
             if (el instanceof HTMLImageElement) {
-              const hiRes = el.getAttribute('data-old-hires') || 
-                          el.getAttribute('data-zoom-hires');
-              
+              const hiRes = el.getAttribute('data-old-hires') ||
+                el.getAttribute('data-zoom-hires');
+
               // Check for dynamic images
               const dynamicImages = el.getAttribute('data-a-dynamic-image');
               if (dynamicImages) {
@@ -128,23 +128,23 @@ async function scrapeAmazon(page: Page): Promise<Product> {
                   return hiRes || el.src;
                 }
               }
-              
+
               return hiRes || el.src;
             }
             return '';
-          }).filter(url => 
-            url && 
-            !url.includes('sprite') && 
-            !url.includes('placeholder') && 
+          }).filter(url =>
+            url &&
+            !url.includes('sprite') &&
+            !url.includes('placeholder') &&
             !url.includes('gif') &&
-            !url.includes('thumb') && 
+            !url.includes('thumb') &&
             !url.includes('small') &&
             !url.includes('SS40') &&
             !url.includes('mini')
           );
         }
       );
-      
+
       images.push(...variantImages);
 
       // Remove duplicates and filter out low-quality images
@@ -163,8 +163,8 @@ async function scrapeAmazon(page: Page): Promise<Product> {
       }).map(url => {
         // Try to get the highest resolution version by modifying Amazon image URLs
         return url.replace(/_S[LR]\d+_/g, '_SL1500_')
-                 .replace(/\._[^.]*_\./, '.') // Remove quality modifiers
-                 .replace(/\._(AA|AB|AC|AD|AE)\d+_/, '.'); // Remove Amazon's size suffixes
+          .replace(/\._[^.]*_\./, '.') // Remove quality modifiers
+          .replace(/\._(AA|AB|AC|AD|AE)\d+_/, '.'); // Remove Amazon's size suffixes
       });
     } catch (error) {
       console.error('Error extracting images:', error);
@@ -183,19 +183,33 @@ async function scrapeAmazon(page: Page): Promise<Product> {
   }
 
   const price = await safeTextExtract('.a-price .a-offscreen, #priceblock_ourprice, #price_inside_buybox');
-  const description = await safeTextExtract('#productDescription p, #feature-bullets');
-  
+
+  // Try multiple selectors for description
+  let description = await safeTextExtract('#productDescription p, #productDescription span');
+  if (!description) {
+    description = await safeTextExtract('#feature-bullets');
+  }
+
   const features = await page.$$eval(
-    '#feature-bullets li span, #productDescription ul li', 
+    '#feature-bullets li span, #productDescription ul li',
     (elements: Element[]) => elements.map((el: Element) => el.textContent?.trim() || '').filter(Boolean)
   );
+
+  // Fallback: If description is still missing or too short, use features
+  if (!description || description.length < 50) {
+    if (features.length > 0) {
+      description = features.join('. ');
+    } else {
+      description = title; // Last resort fallback
+    }
+  }
 
   return {
     title,
     image: images[0], // Main image
     images: images.slice(1), // Additional images
     price,
-    description,
+    description: description.substring(0, 1000), // Limit length
     features,
     url: page.url(),
   };
@@ -215,7 +229,7 @@ async function scrapeShopify(page: Page): Promise<Product> {
   // Helper function to safely extract multiple image URLs
   const safeImagesExtract = async (): Promise<string[]> => {
     const images: string[] = [];
-    
+
     try {
       // Try to get images from the product gallery
       const galleryImages = await page.$$eval(
@@ -236,12 +250,12 @@ async function scrapeShopify(page: Page): Promise<Product> {
                     };
                   })
                   .sort((a, b) => b.width - a.width);
-                
+
                 if (sources.length > 0) {
                   return sources[0].url;
                 }
               }
-              
+
               // Try to get original image by removing Shopify's image parameters
               const src = el.src || el.getAttribute('data-src') || '';
               if (src) {
@@ -250,16 +264,16 @@ async function scrapeShopify(page: Page): Promise<Product> {
               }
             }
             return '';
-          }).filter(url => 
-            url && 
-            !url.includes('loader') && 
+          }).filter(url =>
+            url &&
+            !url.includes('loader') &&
             !url.includes('placeholder') &&
             !url.includes('no-image') &&
             !url.includes('blank')
           );
         }
       );
-      
+
       images.push(...galleryImages);
 
       // Try to get images from JSON data in the page
@@ -287,7 +301,7 @@ async function scrapeShopify(page: Page): Promise<Product> {
             return '';
           })
           .filter(Boolean);
-        
+
         images.push(...highResImages);
       }
     } catch (error) {
@@ -313,9 +327,9 @@ async function scrapeShopify(page: Page): Promise<Product> {
 
   const price = await safeTextExtract('.product-price, .price__regular, .product__price');
   const description = await safeTextExtract('.product-description, .product__description');
-  
+
   const features = await page.$$eval(
-    '.product-features li, .product__features li', 
+    '.product-features li, .product__features li',
     (elements: Element[]) => elements.map((el: Element) => el.textContent?.trim() || '').filter(Boolean)
   );
 

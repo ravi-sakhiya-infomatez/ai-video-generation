@@ -13,6 +13,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'),
   title: "AI Video Generator | Transform Product URLs into Video Ads",
   description: "Generate professional video ads from Amazon and Shopify product URLs in seconds using AI. Built with Next.js, Remotion, and GPT-4.",
   keywords: ["AI video generator", "product video ads", "ecommerce video maker", "remotion", "nextjs", "gpt-4", "ad generator"],
@@ -28,8 +29,12 @@ export const metadata: Metadata = {
     title: "AI Video Generator",
     description: "Generate marketing videos from product URLs automatically.",
   },
-  viewport: "width=device-width, initial-scale=1",
   robots: "index, follow",
+};
+
+export const viewport = {
+  width: "device-width",
+  initialScale: 1,
 };
 
 export default function RootLayout({

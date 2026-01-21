@@ -6,6 +6,8 @@ This full-stack application leverages the power of **GPT-4** for compelling scri
 
 > ✅ **Built with:** `Next.js`, `TypeScript`, `Remotion`, `Puppeteer`, `OpenAI GPT-4`, `TailwindCSS`, `ShadcnUI`
 
+![AI Video Generator Preview](public/preview.svg)
+
 ---
 
 ## 📸 Functionality

@@ -1,11 +1,12 @@
 import { useStore } from '@/lib/store';
 import { cn } from '@/lib/utils';
+import { Check } from 'lucide-react';
 
 const steps = [
-  { id: 'url', label: 'Enter URL' },
-  { id: 'product', label: 'Product Details' },
-  { id: 'script', label: 'Generate Script' },
-  { id: 'video', label: 'Create Video' },
+  { id: 'url', label: 'Input URL' },
+  { id: 'product', label: 'Review Details' },
+  { id: 'script', label: 'AI Script' },
+  { id: 'video', label: 'Final Video' },
 ] as const;
 
 export function Stepper() {
@@ -13,36 +14,46 @@ export function Stepper() {
   const currentStepIndex = steps.findIndex((s) => s.id === step);
 
   return (
-    <div className="w-full max-w-2xl mx-auto mb-8">
-      <div className="flex items-center justify-between">
-        {steps.map((s, idx) => (
-          <div key={s.id} className="flex items-center">
-            <div
-              className={cn(
-                'flex items-center justify-center w-8 h-8 rounded-full text-sm font-medium',
-                idx <= currentStepIndex
-                  ? 'bg-primary text-primary-foreground'
-                  : 'bg-muted text-muted-foreground'
-              )}
-            >
-              {idx + 1}
-            </div>
-            <div className="ml-2 text-sm hidden sm:block">
-              {s.label}
-            </div>
-            {idx < steps.length - 1 && (
+    <div className="w-full max-w-3xl mx-auto mb-12">
+      <div className="relative flex items-center justify-between">
+
+        {/* Connecting Lines Background */}
+        <div className="absolute top-1/2 left-0 w-full h-1 bg-muted -z-10 rounded-full" />
+
+        {/* Dynamic Progress Line */}
+        <div
+          className="absolute top-1/2 left-0 h-1 bg-primary -z-10 rounded-full transition-all duration-500 ease-in-out"
+          style={{ width: `${(currentStepIndex / (steps.length - 1)) * 100}%` }}
+        />
+
+        {steps.map((s, idx) => {
+          const isCompleted = idx < currentStepIndex;
+          const isCurrent = idx === currentStepIndex;
+
+          return (
+            <div key={s.id} className="flex flex-col items-center gap-2 relative z-10">
               <div
                 className={cn(
-                  'h-px w-12 sm:w-24 mx-2',
-                  idx < currentStepIndex
-                    ? 'bg-primary'
-                    : 'bg-muted'
+                  'flex items-center justify-center w-10 h-10 rounded-full text-sm font-bold border-2 transition-all duration-300 shadow-xl backdrop-blur-md',
+                  isCompleted
+                    ? 'bg-primary border-primary text-primary-foreground'
+                    : isCurrent
+                      ? 'bg-background/80 border-primary text-primary scale-110 ring-4 ring-primary/20 shadow-primary/20'
+                      : 'bg-muted/20 border-muted-foreground/30 text-muted-foreground'
                 )}
-              />
-            )}
-          </div>
-        ))}
+              >
+                {isCompleted ? <Check className="w-5 h-5" /> : idx + 1}
+              </div>
+              <div className={cn(
+                "text-xs font-bold tracking-widest transition-colors duration-300 uppercase",
+                isCurrent ? "text-primary drop-shadow-sm" : "text-muted-foreground"
+              )}>
+                {s.label}
+              </div>
+            </div>
+          );
+        })}
       </div>
     </div>
   );
-} 
+}

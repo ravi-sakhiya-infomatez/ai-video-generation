@@ -1,4 +1,4 @@
-export type Step = 'url' | 'product' | 'script' | 'video';
+export type Step = 'url' | 'product' | 'script' | 'selection' | 'video';
 
 export interface Product {
   title: string;

@@ -1,77 +1,53 @@
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/components/ui/card';
 import { useStore } from '@/lib/store';
-import { Player } from '@remotion/player';
-import { AdVideo } from './video/AdVideo';
+import { FileText, ArrowRight } from 'lucide-react';
 
 export function ScriptPreview() {
-  const { script, product, setLoading, setError, setVideo, setStep } = useStore();
+  const { script, product, setLoading, setError, setStep } = useStore();
 
   if (!script || !product) return null;
 
   const handleGenerateVideo = async () => {
     setLoading(true);
     setError(null);
+    // Simulate processing delay or just switch to video step where real rendering happens
+    // The previous API call to /api/generate-video was just returning a fake URL anyway.
+    // We can skip it or keep it if it does some necessary prep, but looking at the code it didn't do much.
+    // Since Step 4 (VideoPlayer) handles everything locally/via render-video API, we can just switch step.
 
-    try {
-      const response = await fetch('/api/generate-video', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ script }),
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to generate video');
-      }
-
-      const { videoUrl, renderConfig } = await response.json();
-      
-      // Set up the video player with the script
-      setVideo(videoUrl);
-      setStep('video');
-    } catch (error) {
-      setError(error instanceof Error ? error.message : 'Something went wrong');
-    } finally {
+    setTimeout(() => {
+      setStep('selection');
       setLoading(false);
-    }
+    }, 500);
   };
 
   return (
-    <Card className="w-full max-w-2xl mx-auto">
-      <CardHeader>
-        <CardTitle>Generated Ad Script</CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <div className="prose prose-sm">
-          <p className="whitespace-pre-wrap">{script}</p>
-        </div>
-        <div className="aspect-video bg-muted rounded-lg overflow-hidden">
-          <Player
-            component={AdVideo}
-            durationInFrames={450}
-            fps={30}
-            compositionWidth={1920}
-            compositionHeight={1080}
-            style={{
-              width: '100%',
-              height: '100%',
-              maxWidth: '100%',
-              maxHeight: 'calc(100vh - 400px)',
-              imageRendering: '-webkit-optimize-contrast',
-              WebkitFontSmoothing: 'antialiased'
-            }}
-            inputProps={{
-              script,
-              product,
-            }}
-          />
-        </div>
-      </CardContent>
-      <CardFooter>
-        <Button onClick={handleGenerateVideo} className="w-full">
-          Generate Video
-        </Button>
-      </CardFooter>
-    </Card>
+    <div className="w-full max-w-4xl mx-auto">
+      {/* Script Section */}
+      <Card className="h-full border-primary/10 shadow-2xl shadow-primary/5 bg-card/50 backdrop-blur-xl flex flex-col">
+        <CardHeader className="bg-muted/30 border-b border-border/50">
+          <div className="flex items-center gap-2">
+            <FileText className="w-5 h-5 text-primary" />
+            <CardTitle className="text-xl">AI Generated Script</CardTitle>
+          </div>
+        </CardHeader>
+        <CardContent className="p-6">
+          <div className="prose prose-invert prose-sm max-w-none p-4 bg-muted/20 rounded-lg border border-border/50 h-[500px] overflow-y-auto custom-scrollbar">
+            <p className="whitespace-pre-wrap leading-relaxed text-muted-foreground font-mono text-sm">
+              {script}
+            </p>
+          </div>
+        </CardContent>
+        <CardFooter className="p-6 bg-muted/30 border-t border-border/50">
+          <Button
+            onClick={handleGenerateVideo}
+            className="w-full h-12 text-lg font-semibold bg-gradient-to-r from-primary to-purple-600 hover:from-primary/90 hover:to-purple-600/90 shadow-lg shadow-primary/25 transition-all duration-300 transform hover:scale-[1.01]"
+          >
+            Render Final Video <ArrowRight className="ml-2 w-5 h-5" />
+          </Button>
+        </CardFooter>
+      </Card>
+    </div>
   );
-} 
+}
