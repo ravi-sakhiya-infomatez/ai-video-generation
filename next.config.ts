@@ -1,5 +1,5 @@
 import type { NextConfig } from "next";
-import type { Configuration as WebpackConfig } from 'webpack';
+
 
 const nextConfig: NextConfig = {
   images: {
@@ -17,40 +17,7 @@ const nextConfig: NextConfig = {
   typescript: {
     ignoreBuildErrors: true,
   },
-  webpack: (config: WebpackConfig) => {
-    // Ensure module and rules exist
-    if (!config.module) config.module = {};
-    if (!config.module.rules) config.module.rules = [];
 
-    // Handle markdown files
-    config.module.rules.push({
-      test: /\.md$/,
-      type: 'asset/source',
-    });
-
-    // Handle esbuild native modules
-    config.module.rules.push({
-      test: /\/node_modules\/@esbuild\/.*\/README\.md$/,
-      type: 'javascript/auto',
-      loader: 'raw-loader',
-    });
-
-    // Ensure resolve exists
-    if (!config.resolve) config.resolve = {};
-
-    // Configure module resolution
-    config.resolve = {
-      ...config.resolve,
-      fallback: {
-        ...config.resolve?.fallback,
-        fs: false,
-        path: false,
-        os: false,
-      },
-    };
-
-    return config;
-  },
 };
 
 export default nextConfig;
